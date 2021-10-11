@@ -3,7 +3,7 @@
 
 CFLAGS=-Wall -Wextra -Wpedantic
 APP=prodcon
-OBJ=main.o tands.o
+OBJ=main.o tands.o queue.o
 
 all: CFLAGS += -O
 all: $(APP)

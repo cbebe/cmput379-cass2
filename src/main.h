@@ -21,6 +21,7 @@ typedef struct {
 
 typedef struct {
   int num_jobs;
+  int max_jobs;
   Job *job_queue;
 } JobQueue;
 

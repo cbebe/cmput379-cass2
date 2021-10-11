@@ -11,6 +11,9 @@
 void Trans(int n);
 void Sleep(int n);
 
+JobQueue* new_queue(int n_consumers);
+void delete_queue(JobQueue* queue);
+
 void log_job(FILE* outfile, clock_t* clk, char const* str) {
   clock_t end = clock();
   fprintf(outfile, "%3.3f %s\n", (double)(end - *clk) / CLOCKS_PER_SEC, str);
@@ -77,6 +80,7 @@ void process_input(char const* input, Job* job) {
 int main(int argc, char const* argv[]) {
   int nthreads;
   FILE* fp = parse_args(&nthreads, argc, argv);
+  JobQueue* queue = new_queue(nthreads);
 
   size_t in_buf_size = 16;
   char* in_buf = malloc(sizeof(*in_buf) * in_buf_size);
@@ -93,6 +97,7 @@ int main(int argc, char const* argv[]) {
   }
 
   free(in_buf);
+  delete_queue(queue);
   fclose(fp);
   return 0;
 }

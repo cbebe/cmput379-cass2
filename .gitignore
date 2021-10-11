@@ -1,3 +1,5 @@
 prodcon
 *.o
 build
+inputexample
+*.log

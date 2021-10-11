@@ -5,6 +5,12 @@ CFLAGS=-Wall -Wextra -Wpedantic
 APP=prodcon
 OBJ=main.o tands.o
 
+all: CFLAGS += -O
+all: $(APP)
+
+debug: CFLAGS += -g
+debug: $(APP)
+
 $(APP): $(OBJ)
 	gcc $(CFLAGS) -o $@ $^
 

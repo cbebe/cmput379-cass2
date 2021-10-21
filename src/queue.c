@@ -12,6 +12,8 @@ JobQueue* new_queue(int n_consumers) {
   queue->num_consumers = n_consumers;
   queue->job_queue = calloc(sizeof(*queue->job_queue), max_jobs);
   queue->jobs_completed = calloc(sizeof(*queue->jobs_completed), n_consumers);
+  queue->jobs_asked = calloc(sizeof(*queue->jobs_asked), n_consumers);
+  queue->jobs_received = calloc(sizeof(*queue->jobs_received), n_consumers);
 
   pthread_mutex_init(&queue->lock, NULL);
 
@@ -23,6 +25,9 @@ JobQueue* new_queue(int n_consumers) {
 }
 
 void delete_queue(JobQueue* queue) {
+  free(queue->jobs_received);
+  free(queue->jobs_asked);
+  free(queue->jobs_completed);
   free(queue->job_queue);
   free(queue);
 }
@@ -58,10 +63,13 @@ int consume(JobQueue* queue, int* queue_num) {
   return job;
 }
 
-void produce(JobQueue* queue, int job) {
+int produce(JobQueue* queue, int job) {
+  int queue_num;
   sem_wait(&queue->empty);
   pthread_mutex_lock(&queue->lock);
   queue->job_queue[queue->queue_counter++] = job;
+  queue_num = queue->queue_counter;
   pthread_mutex_unlock(&queue->lock);
   sem_post(&queue->full);
+  return queue_num;
 }

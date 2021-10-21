@@ -6,6 +6,7 @@ APP=prodcon
 ZIP_NAME=Assignment2.zip
 
 CFLAGS=-Wall -Wextra -Wpedantic
+LDFLAGS=-lpthread
 OBJ=$(SRC:%=build/%.o)
 BUILD=build
 
@@ -24,10 +25,10 @@ run: $(APP) $(SAMPLE_INPUT)
 	./$< 8 < $(SAMPLE_INPUT)
 
 prodcon: $(OBJ)
-	gcc $(CFLAGS) -o $@ $^
+	gcc $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(BUILD)/%.o: src/%.c $(BUILD)
-	gcc $(CFLAGS) -o $@ -c $<
+	gcc $(CFLAGS) -o $@ -c $< $(LDFLAGS)
 
 $(BUILD):
 	mkdir $@

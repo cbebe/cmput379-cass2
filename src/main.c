@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,15 +9,30 @@
 // Remove newline rom the end of a string
 #define remove_newline(line) line[strcspn(line, "\n")] = '\0'
 
+// Forward declarations
 void Trans(int n);
 void Sleep(int n);
 
 JobQueue* new_queue(int n_consumers);
 void delete_queue(JobQueue* queue);
+int consume(JobQueue* queue, int* queue_num);
+void produce(JobQueue* queue, int job);
+void end_queue(JobQueue* queue);
 
-void log_job(FILE* outfile, clock_t* clk, char const* str) {
+// output file
+FILE* fp;
+// job queue
+JobQueue* queue;
+
+pthread_mutex_t file_lock;
+
+clock_t start;
+
+void log(FILE* outfile, char const* str) {
   clock_t end = clock();
-  fprintf(outfile, "%3.3f %s\n", (double)(end - *clk) / CLOCKS_PER_SEC, str);
+  pthread_mutex_lock(&file_lock);
+  fprintf(outfile, "%3.3f %s\n", (double)(end - start) / CLOCKS_PER_SEC, str);
+  pthread_mutex_unlock(&file_lock);
 }
 
 // accept one or two command line arguments
@@ -44,8 +60,6 @@ FILE* parse_args(int* nthreads, int argc, char const* argv[]) {
     sprintf(filename, "prodcon.log");
   }
 
-  printf("number of threads: %d, file name: %s\n", *nthreads, filename);
-
   FILE* fp = fopen(filename, "w");
   if (fp == NULL) {
     fprintf(stderr, "Error opening file");
@@ -54,33 +68,38 @@ FILE* parse_args(int* nthreads, int argc, char const* argv[]) {
   return fp;
 }
 
-void do_job(Job* job) {
-  switch (job->req) {
-    case TRANSACTION:
-      // sprintf(output, "ID = 0       Work");
-      // log_job(outfile, clk, output);
-      Trans(job->arg);
-      break;
-    case SLEEP:
-      // sprintf(output, "ID = 0       Sleep");
-      // log_job(outfile, clk, output);
-      Sleep(job->arg);
-      break;
-    default:
-      // shouldn't happen; we're guaranteed to have good input
-      fprintf(stderr, "Bad input, ignoring.\n");
+void* consooming_thread(void* thread_id) {
+  int id = *((int*)thread_id);
+  free(thread_id);
+  int queue_num, job;
+  while (1) {
+    // finish thread
+    job = consume(queue, &queue_num);
+    if (job == QUEUE_END) {
+      return NULL;
+    }
+    Trans(job);
+    ++queue->jobs_completed[id - 1];
   }
 }
 
-void process_input(char const* input, Job* job) {
-  job->req = input[0];  // either TRANSACTION or SLEEP, we expect good input
-  job->arg = atoi(&input[1]);  // get n after the first character
+void process_input(char const* input) {
+  int arg = atoi(&input[1]);
+  switch (input[0]) {
+    case 'S':
+      Sleep(arg);
+      break;
+    case 'T':
+      produce(queue, arg);
+      break;
+  }
 }
 
 int main(int argc, char const* argv[]) {
   int nthreads;
-  FILE* fp = parse_args(&nthreads, argc, argv);
-  JobQueue* queue = new_queue(nthreads);
+  // set up output file
+  fp = parse_args(&nthreads, argc, argv);
+  queue = new_queue(nthreads);
 
   size_t in_buf_size = 16;
   char* in_buf = malloc(sizeof(*in_buf) * in_buf_size);
@@ -88,12 +107,20 @@ int main(int argc, char const* argv[]) {
     perror("in_buf malloc");
     exit(1);
   }
-  Job job;
-  // clock_t begin = clock();
+  pthread_t tid[nthreads];
+  start = clock();
+  for (int i = 0; i < nthreads; ++i) {
+    int* id = malloc(sizeof(*id));
+    *id = i;
+    pthread_create(&tid[i], NULL, consooming_thread, id);
+  }
   while (getline(&in_buf, &in_buf_size, stdin) >= 0) {
     remove_newline(in_buf);
-    process_input(in_buf, &job);
-    do_job(&job);
+    process_input(in_buf);
+  }
+  end_queue(queue);
+  for (int i = 0; i < nthreads; ++i) {
+    pthread_join(tid[i], NULL);
   }
 
   free(in_buf);

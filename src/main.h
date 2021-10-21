@@ -1,28 +1,18 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
-#define EVENT_STR_SIZE 10
-
-typedef enum {
-  WORK_E = 'W',
-  COMPLETE_E = 'C',
-  ASK_E = 'A',
-  RECEIVE_E = 'R',
-  END_E = 'E',
-  SLEEP_E = 'S'
-} Event;
-
-typedef enum { TRANSACTION = 'T', SLEEP = 'S' } Request;
+#include <pthread.h>
+#include <semaphore.h>
 
 typedef struct {
-  Request req;
-  int arg;
-} Job;
-
-typedef struct {
-  int num_jobs;
-  int max_jobs;
-  Job *job_queue;
+  int queue_counter;
+  int num_consumers;
+  pthread_mutex_t lock;  // queue lock
+  sem_t empty, full;     // semaphores for blocking producers and consumers
+  int *jobs_completed;   // array of jobs completed with length N_CONSUMERS
+  int *job_queue;        // queue array of length 2 * N_CONSUMERS
 } JobQueue;
+
+#define QUEUE_END -1
 
 #endif

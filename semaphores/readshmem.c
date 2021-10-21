@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "shared_memory.h"
 
@@ -15,8 +16,17 @@ int main(int argc, char const* argv[]) {
     return -1;
   }
 
-  printf("Reading: \"%s\"\n", block);
-
+  while (true) {
+    if (strlen(block) > 0) {
+      printf("Reading: \"%s\"\n", block);
+      bool done = (strcmp(block, "quit") == 0);
+      block[0] = 0;
+      if (done) {
+        break;
+      }
+    }
+  }
   detach_memory_block(block);
+
   return 0;
 }

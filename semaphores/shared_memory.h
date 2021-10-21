@@ -10,4 +10,7 @@ bool destroy_memory_block(char *filename);
 #define BLOCK_SIZE 4096
 #define FILENAME "writeshmem.c"
 
+#define SEM_PRODUCER_FNAME "destroy_shmem.exe"
+#define SEM_CONSUMER_FNAME "writeshmem.exe"
+
 #endif /* SHARED_MEMORY */

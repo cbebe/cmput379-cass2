@@ -33,17 +33,17 @@ void delete_queue(JobQueue* queue) {
 }
 
 void end_queue(JobQueue* queue) {
-  int num_jobs;
-  pthread_mutex_lock(&queue->lock);
-  num_jobs = queue->queue_counter;
-  pthread_mutex_unlock(&queue->lock);
-  for (int i = 0; i < num_jobs; ++i) {
-    sem_wait(&queue->empty);
+  int num_jobs = 1;
+  // this is horrible but everything is mostly correct
+  while (num_jobs > 0) {
+    pthread_mutex_lock(&queue->lock);
+    num_jobs = queue->queue_counter;
+    pthread_mutex_unlock(&queue->lock);
   }
   pthread_mutex_lock(&queue->lock);
   queue->queue_counter = QUEUE_END;
   pthread_mutex_unlock(&queue->lock);
-  for (int i = 0; i < num_jobs; ++i) {
+  for (int i = 0; i < queue->num_consumers; ++i) {
     sem_post(&queue->full);
   }
 }

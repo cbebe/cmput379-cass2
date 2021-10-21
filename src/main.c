@@ -92,9 +92,10 @@ void* consooming_thread(void* thread_id) {
   free(thread_id);
   int queue_num, job;
   while (1) {
-    // finish thread
+    log_no_arg(1, "Ask");
     ++queue->jobs_asked[id - 1];
     job = consume(queue, &queue_num);
+    // finish thread
     if (job == QUEUE_END) {
       return NULL;
     }

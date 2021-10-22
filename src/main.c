@@ -43,7 +43,7 @@ struct job_queue* queue;
  */
 void parse_args(int* nthreads, char* filename, int argc, char const* argv[]) {
   if (argc < 2) {
-    fprintf(stderr, "Usage: prodcon N_THREADS [LOG_ID]\n");
+    fprintf(stderr, "Usage: %s N_THREADS [LOG_ID]\n", argv[0]);
     exit(2);
   }
   *nthreads = atoi(argv[1]);

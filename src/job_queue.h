@@ -6,16 +6,30 @@
 #include <stdio.h>
 
 struct job_queue {
-  int queue_counter;
-  int num_consumers;
-  int work;
-  int sleep;
+  int* job_queue;     // job queue with length 2 * n_consumers
+  int queue_counter;  // this number is protected by a mutex lock as it's used
+                      // to access the queue
   pthread_mutex_t lock;  // queue lock
-  sem_t empty, full;     // semaphores for blocking producers and consumers
-  int* jobs_asked;       // array of jobs asked with length N_CONSUMERS
-  int* jobs_received;    // array of jobs received with length N_CONSUMERS
-  int* jobs_completed;   // array of jobs completed with length N_CONSUMERS
-  int* job_queue;        // queue array of length 2 * N_CONSUMERS
+
+  sem_t full;   // semaphore for blocking producer from adding to the queue if
+                // it's full
+  sem_t empty;  // semaphore for blocking a consumer from taking from the queue
+                // if it's empty
+
+  int num_consumers;  // number of consumers
+
+  int work;  // number of work received by the producer. should match the sum of
+             // jobs_completed and jobs_received
+  int sleep;  // number of sleeps received by the producer
+
+  /**
+   * Arrays of length n_consumers for keeping track of asks, received jobs, and
+   * completed jobs. Doesn't need to be locked since each thread has their own
+   * element in each array.
+   */
+  int* jobs_asked;
+  int* jobs_received;
+  int* jobs_completed;
 };
 
 #define NO_MORE_JOBS -1

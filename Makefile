@@ -4,7 +4,7 @@
 CFLAGS=-Wall -Wextra -Wpedantic
 LDFLAGS=-lpthread
 APP=prodcon
-OBJ=main.o tands.o queue.o
+OBJ=main.o tands.o job_queue.o logger.o
 
 all: CFLAGS += -O
 all: $(APP)
@@ -13,7 +13,7 @@ debug: CFLAGS += -g
 debug: $(APP)
 
 $(APP): $(OBJ)
-	gcc $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	gcc $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 %.o: src/%.c
 	gcc $(CFLAGS) -o $@ -c $< $(LDFLAGS)

@@ -1,5 +1,5 @@
 # Development makefile
-SRC=main tands queue
+SRC=main tands job_queue logger
 SAMPLE_INPUT=inputexample
 OUTPUT=*.log
 APP=prodcon

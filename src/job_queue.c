@@ -7,6 +7,8 @@
 struct job_queue* job_queue_init(int n_consumers) {
   struct job_queue* q = malloc(sizeof(*q));
   q->queue_counter = 0;
+  q->work = 0;
+  q->sleep = 0;
   // The q must be able to hold 2 x #consumers amount of work.
   int max_jobs = 2 * n_consumers;
   q->num_consumers = n_consumers;

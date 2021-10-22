@@ -8,6 +8,8 @@
 struct job_queue {
   int queue_counter;
   int num_consumers;
+  int work;
+  int sleep;
   pthread_mutex_t lock;  // queue lock
   sem_t empty, full;     // semaphores for blocking producers and consumers
   int* jobs_asked;       // array of jobs asked with length N_CONSUMERS

@@ -31,13 +31,12 @@ void log_with_q_and_arg(struct logger* l, int id, int q, char const* event,
 struct logger* logger_init(char const* filename);
 void logger_destroy(struct logger* l);
 void start_clock(struct logger* l);
+void print_summary(struct logger* l, struct job_queue* q);
 
 // logger
 struct logger* logger;
 // job queue
 struct job_queue* queue;
-
-clock_t end;
 
 /**
  * Accept one or two command line arguments
@@ -82,44 +81,12 @@ void* consooming_thread(void* thread_id) {
   }
 }
 
-void print_value(char const* str, int num) {
-  fprintf(logger->fp, "%4s%-9s %5d\n", "", str, num);
-}
-
-void print_summary(int work, int sleep) {
-  fprintf(logger->fp, "Summary:\n");
-  print_value("Work", work);
-  int ask = 0, receive = 0, complete = 0;
-  int work_per_thread[queue->num_consumers];
-  for (int i = 0; i < queue->num_consumers; ++i) {
-    work_per_thread[i] = queue->jobs_completed[i];
-    ask += queue->jobs_asked[i];
-    receive += queue->jobs_received[i];
-    complete += queue->jobs_completed[i];
-  }
-  print_value("Ask", ask);
-  print_value("Receive", receive);
-  print_value("Complete", complete);
-  print_value("Sleep", sleep);
-  for (int i = 0; i < queue->num_consumers; ++i) {
-    char buf[32];
-    sprintf(buf, "Thread %2d", i + 1);
-    print_value(buf, work_per_thread[i]);
-  }
-  double duration = (double)(end - logger->start) / CLOCKS_PER_SEC;
-  fprintf(logger->fp, "Transactions per second: %5.2f\n",
-          (double)work / duration);
-  if (work != complete && work != receive) {
-    fprintf(logger->fp, "ERROR! Uncompleted jobs!\n");
-  }
-}
-
 int main(int argc, char const* argv[]) {
   int nthreads;
   char filename[64];
   // set up output file
   parse_args(&nthreads, filename, argc, argv);
-  logger_init(filename);
+  logger = logger_init(filename);
   queue = job_queue_init(nthreads);
 
   size_t in_buf_size = 16;
@@ -130,25 +97,24 @@ int main(int argc, char const* argv[]) {
   }
   pthread_t tid[nthreads];
 
-  start_clock(logger);
   for (int i = 0; i < nthreads; ++i) {
     int* id = malloc(sizeof(*id));
     *id = i + 1;
     pthread_create(&tid[i], NULL, consooming_thread, id);
   }
-  int work = 0, sleep = 0;
+  start_clock(logger);
   while (getline(&in_buf, &in_buf_size, stdin) >= 0) {
     remove_newline(in_buf);
     int arg = atoi(&in_buf[1]);
     switch (in_buf[0]) {
       case 'S': {
         log_with_arg(logger, 0, "Sleep", arg);
-        sleep++;
+        queue->sleep++;
         Sleep(arg);
         break;
       }
       case 'T': {
-        work++;
+        queue->work++;
         int q = produce(queue, arg);
         log_with_q_and_arg(logger, 0, q, "Work", arg);
         break;
@@ -156,11 +122,10 @@ int main(int argc, char const* argv[]) {
     }
   }
   end_queue(queue);
-  end = clock();
   for (int i = 0; i < nthreads; ++i) {
     pthread_join(tid[i], NULL);
   }
-  print_summary(work, sleep);
+  print_summary(logger, queue);
 
   free(in_buf);
   logger_destroy(logger);

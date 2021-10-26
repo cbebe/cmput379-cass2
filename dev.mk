@@ -7,8 +7,9 @@ ZIP_NAME=Assignment2.zip
 
 CFLAGS=-Wall -Wextra -Wpedantic
 LDFLAGS=-lpthread
-OBJ=$(SRC:%=build/%.o)
 BUILD=build
+OBJ=$(SRC:%=$(BUILD)/%.o)
+
 
 all: CFLAGS += -O
 all: $(APP) $(SAMPLE_INPUT)
@@ -33,10 +34,11 @@ $(BUILD)/%.o: src/%.c $(BUILD)
 $(BUILD):
 	mkdir $@
 
-zip: clean
-	$(MAKE) clean
-	zip -r ../$(ZIP_NAME) .
+zip:
+	zip -r $(ZIP_NAME) src Makefile dev.mk README
 
 clean:
 	rm -f $(APP) $(SAMPLE_INPUT) $(OUTPUT)
 	rm -rf $(BUILD)
+
+.PHONY: all debug run zip clean
